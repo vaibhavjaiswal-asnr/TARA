@@ -36,7 +36,7 @@ jobs:
           printf 'TARA_NJOY_EXEC=%s\n' "$njoy_build/njoy" >> "$GITHUB_ENV"
 
       - name: Install TARA and test dependencies
-        run: python -m pip install ".[test]"
+        run: python -m pip install ".[test]" matplotlib
 
       - name: Run a native LEAPR smoke test
         # Use the checked-in deck so CI can exercise NJOY without patching pytest files.
@@ -104,7 +104,7 @@ jobs:
 
       - name: Install TARA and notebook dependencies
         # TARA's pyproject.toml installs the Liquids plugin from GitHub.
-        run: python -m pip install . nbclient nbformat ipykernel matplotlib
+        run: python -m pip install . nbclient nbformat ipykernel matplotlib seaborn
 
       - name: Verify the NCrystal Liquids plugin
         if: matrix.engine == 'ncrystal'
