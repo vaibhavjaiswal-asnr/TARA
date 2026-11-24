@@ -12,6 +12,7 @@ import NCrystal as NC
 import numpy as np
 
 from input_output.ncrystal.liquids import parse_custom_liquids
+from processing.backends.liquid_capture.payload import read_sabtap_arrays
 from processing.backends.ncmat_isolation import isolate_ncmat_dyninfo
 
 
@@ -309,8 +310,10 @@ def _decode_captured_component(
     """
     if not np.isclose(record['temperature_K'], temperature, rtol=1e-12):
         raise ValueError("Captured temperature differs from request")
-    for key in ('alpha', 'beta', 'sab'):
-        arrays[f"{prefix}_{key}"] = np.asarray(record[key], dtype=float)
+    alpha, beta, sab = read_sabtap_arrays(filename, record)
+    arrays[f"{prefix}_alpha"] = alpha
+    arrays[f"{prefix}_beta"] = beta
+    arrays[f"{prefix}_sab"] = sab
 
     xs_path = filename.with_name(filename.name.replace('sab_', 'xs_')).with_suffix('.txt')
     component_xs = np.loadtxt(xs_path, ndmin=1)
@@ -358,6 +361,30 @@ def _include_free_gas(root, text, labels, temperature, energies, active, sum_xs,
             selected_xs += free_xs
 
 
+def _hash_dynamic_plugin_files(plugins):
+    """Compute SHA-256 fingerprints for file-backed dynamic plugins.
+
+    Parameters
+    ----------
+    plugins : iterable of tuple
+        NCrystal plugin names, locations, and registration types.
+
+    Returns
+    -------
+    dict of str to str
+        SHA-256 digests keyed by plugin file path.
+    """
+    hashes = {}
+    for _, location, kind in plugins:
+        if not location or kind != "dynamic":
+            continue
+        path = Path(location)
+        # NCrystal also registers data-directory plugins as dynamic.
+        if path.is_file():
+            hashes[location] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return hashes
+
+
 def _write_capture_result(root, arrays, components, target, text, active, request):
     """Write the binary arrays and their provenance to the parent handoff.
 
@@ -380,13 +407,13 @@ def _write_capture_result(root, arrays, components, target, text, active, reques
     """
     # A bounded, binary handoff; text captures are discarded with the sandbox.
     np.savez(root / 'result.npz', **arrays)
+    vdos_analysis = target.analyseVDOS()
+    plugins = NC.plugins.browsePlugins()
     metadata = {
-        "components": components, "vdos_analysis": target.analyseVDOS(),
+        "components": components, "vdos_analysis": vdos_analysis,
         "provenance": {
-            "ncrystal_version": NC.__version__, "plugins": NC.plugins.browsePlugins(),
-            "plugin_hashes": {path: hashlib.sha256(Path(path).read_bytes()).hexdigest()
-                              for _, path, kind in NC.plugins.browsePlugins()
-                              if path and kind == 'dynamic'},
+            "ncrystal_version": NC.__version__, "plugins": plugins,
+            "plugin_hashes": _hash_dynamic_plugin_files(plugins),
             "material_sha256": hashlib.sha256(text.encode()).hexdigest(),
             "active_species": sorted(active), "target": request['target'],
             "vdoslux": request['vdoslux'], "capture": "SABScatter constructor",

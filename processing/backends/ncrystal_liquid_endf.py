@@ -24,6 +24,8 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 
+from processing.backends.liquid_capture.payload import read_sabtap_arrays
+
 
 DEFAULT_LIQUID_EMAX_EV = 0.1
 DEFAULT_LIQUID_EPSILON = 20.0
@@ -1110,29 +1112,12 @@ def load_sabtap_json(path: str | Path) -> Dict[str, Any]:
     if record.get("layout") != "sab[beta_index][alpha_index]":
         raise ValueError("Unexpected SABData JSON layout")
 
-    if "binary_file" in record:
-        n_alpha = int(record["n_alpha"])
-        n_beta = int(record["n_beta"])
-        payload = np.fromfile(
-            json_path.parent / record["binary_file"], dtype=np.float64
-        )
-        if payload.size != n_alpha + n_beta + n_alpha * n_beta:
-            raise ValueError("SABData binary payload size mismatch")
-        alpha = payload[:n_alpha]
-        beta = payload[n_alpha : n_alpha + n_beta]
-        sab = payload[n_alpha + n_beta :]
-    else:
-        alpha = np.asarray(record["alpha"], dtype=np.float64)
-        beta = np.asarray(record["beta"], dtype=np.float64)
-        sab_2d = np.asarray(record["sab"], dtype=np.float64)
-        if sab_2d.shape != (len(beta), len(alpha)):
-            raise ValueError("SABData JSON table shape does not match grids")
-        sab = sab_2d.ravel(order="C")
+    alpha, beta, sab = read_sabtap_arrays(json_path, record)
 
     out = dict(
         alpha=alpha,
         beta=beta,
-        sab=sab,
+        sab=sab.ravel(order="C"),
         mass_amu=float(record["element_mass_amu"]),
         scatxs=float(record["bound_xs_barn"]),
         temperature=float(record["temperature_K"]),
