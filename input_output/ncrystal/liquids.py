@@ -13,6 +13,14 @@ from typing import Iterable
 
 import numpy as np
 
+from common.validation import (
+    require_finite_array,
+    require_finite_positive,
+    require_ndim,
+    require_nonnegative_array,
+    require_same_shape,
+)
+
 
 @dataclass(frozen=True)
 class LiquidAtomSettings:
@@ -87,8 +95,7 @@ class LiquidAtomSettings:
         if self.model not in ("incoherent", "skold", "vineyard"):
             raise ValueError("Liquid plugin model must be incoherent, skold, or vineyard.")
         # The Egelstaff--Schofield parameter must be physical for the plugin.
-        if not math.isfinite(self.c) or self.c <= 0:
-            raise ValueError("Liquid plugin c must be finite and positive.")
+        require_finite_positive(self.c, message="Liquid plugin c must be finite and positive.")
         # Translation and solid-like contributions partition the mode weight.
         if not all(math.isfinite(v) and 0 <= v <= 1 for v in (self.wt, self.ws)):
             raise ValueError("Liquid mode weights must lie in [0,1].")
@@ -481,10 +488,14 @@ def _validate_vdos_input(energy_ev, density) -> tuple[np.ndarray, np.ndarray]:
     # Validate grid and density together before any NCMAT serialization.
     grid = np.asarray(energy_ev, dtype=float)
     vals = np.asarray(density, dtype=float)
-    if grid.ndim != 1 or vals.shape != grid.shape or len(grid) < 3:
-        raise ValueError("VDOS grid and density must be matching 1D arrays (>=3).")
-    if not np.isfinite(vals).all() or np.any(vals < 0):
-        raise ValueError("VDOS densities must be finite and nonnegative.")
+    grid_error = "VDOS grid and density must be matching 1D arrays (>=3)."
+    require_ndim(grid, 1, message=grid_error)
+    require_same_shape(vals, grid, message=grid_error)
+    if len(grid) < 3:
+        raise ValueError(grid_error)
+    density_error = "VDOS densities must be finite and nonnegative."
+    require_finite_array(vals, message=density_error)
+    require_nonnegative_array(vals, message=density_error)
     validate_regular_vdos_grid(grid)
     return grid, vals
 

@@ -13,6 +13,8 @@ import math
 from pathlib import Path
 import re
 
+from common.validation import require_finite_positive
+
 
 _ENDF_EXPONENT = re.compile(r"^([+-]?(?:\d+(?:\.\d*)?|\.\d+))([+-]\d+)$")
 
@@ -273,8 +275,7 @@ def validate_tsl_temperature(
         If the requested temperature is not encoded in the TSL evaluation.
     """
     requested = float(requested_temperature)
-    if not math.isfinite(requested) or requested <= 0.0:
-        raise ValueError("ACE temperature must be finite and positive (kelvin).")
+    require_finite_positive(requested, message="ACE temperature must be finite and positive (kelvin).")
     available = read_tsl_temperatures(file_path)
     if not any(math.isclose(t, requested, rel_tol=1e-4, abs_tol=1e-4) for t in available):
         raise ValueError(

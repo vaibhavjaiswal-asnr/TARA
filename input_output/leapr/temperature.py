@@ -6,6 +6,7 @@ import math
 import warnings
 from typing import TYPE_CHECKING
 
+from common.validation import require_finite_positive
 from input_output.leapr.exceptions import LeaprFormatError
 
 if TYPE_CHECKING:
@@ -265,8 +266,7 @@ def _validate_requested_temperature(temperature: float, error_message: str) -> f
         requested = float(temperature)
     except (TypeError, ValueError, OverflowError) as exc:
         raise ValueError(error_message) from exc
-    if not math.isfinite(requested) or requested <= 0.0:
-        raise ValueError(error_message)
+    require_finite_positive(requested, message=error_message)
     return requested
 
 

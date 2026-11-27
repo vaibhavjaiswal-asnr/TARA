@@ -13,6 +13,8 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 
+from common.validation import require_ndim, require_same_shape
+
 
 class FastAmplitudePerturber:
     """
@@ -66,10 +68,10 @@ class FastAmplitudePerturber:
         self.x_grid = np.asarray(x_grid, dtype=np.float64)
         self.y_density = np.asarray(y_density, dtype=np.float64)
 
-        if self.x_grid.ndim != 1 or self.y_density.ndim != 1:
-            raise ValueError("x_grid and y_density must be one-dimensional arrays.")
-        if self.x_grid.shape != self.y_density.shape:
-            raise ValueError("x_grid and y_density must have the same shape.")
+        shape_error = "x_grid and y_density must be one-dimensional arrays."
+        require_ndim(self.x_grid, 1, message=shape_error)
+        require_ndim(self.y_density, 1, message=shape_error)
+        require_same_shape(self.x_grid, self.y_density, message="x_grid and y_density must have the same shape.")
         # Examine adjacent grid differences to enforce ordering or locate transitions.
         if self.x_grid.size > 1 and np.any(np.diff(self.x_grid) <= 0.0):
             raise ValueError("x_grid must be strictly increasing.")
@@ -243,8 +245,7 @@ class FastAmplitudePerturber:
         """
         shifts = np.asarray(shifts, dtype=np.float64)
 
-        if shifts.ndim != 2:
-            raise ValueError("Batch amplitude shifts must be two-dimensional.")
+        require_ndim(shifts, 2, message="Batch amplitude shifts must be two-dimensional.")
         if shifts.shape[1] != len(boundaries):
             raise ValueError(
                 "The number of amplitude-shift columns must match the number "
@@ -286,8 +287,7 @@ class FastAmplitudePerturber:
             Perturbed one-dimensional density array.
         """
         shifts = np.asarray(shifts, dtype=np.float64)
-        if shifts.ndim != 1:
-            raise ValueError("Single-sample amplitude shifts must be one-dimensional.")
+        require_ndim(shifts, 1, message="Single-sample amplitude shifts must be one-dimensional.")
 
         # Keep the scalar API as a compatibility wrapper around the optimized
         # matrix implementation so both paths share exactly the same arithmetic.

@@ -28,6 +28,12 @@ import numpy as np
 from numba import njit, prange
 from scipy.interpolate import PchipInterpolator
 
+from common.validation import (
+    require_finite_array,
+    require_ndim,
+    require_nonnegative_array,
+)
+
 
 DEFAULT_VALLEY_SEARCH_RADIUS_MEV = 3.0
 DEFAULT_VALLEY_SMOOTHING_MEV = 0.5
@@ -725,21 +731,17 @@ def _validate_inputs(
             "The number of spatial boundaries must match the number of shifts."
         )
 
-    if not np.all(np.isfinite(x_grid)):
-        raise ValueError("x_grid contains non-finite values.")
+    require_finite_array(x_grid, message="x_grid contains non-finite values.")
 
-    if not np.all(np.isfinite(y_density)):
-        raise ValueError("y_density contains non-finite values.")
+    require_finite_array(y_density, message="y_density contains non-finite values.")
 
-    if not np.all(np.isfinite(shifts)):
-        raise ValueError("shifts contains non-finite values.")
+    require_finite_array(shifts, message="shifts contains non-finite values.")
 
     # Examine adjacent grid differences to enforce ordering or locate transitions.
     if np.any(np.diff(x_grid) <= 0.0):
         raise ValueError("x_grid must be strictly increasing.")
 
-    if np.any(x_grid < 0.0):
-        raise ValueError("The energy grid cannot contain negative energies.")
+    require_nonnegative_array(x_grid, message="The energy grid cannot contain negative energies.")
 
     for i, (start, end) in enumerate(boundaries):
         if not np.isfinite(start) or not np.isfinite(end):
@@ -2193,8 +2195,7 @@ def _validate_translation_batch(x_grid, y_density, shifts, boundaries) -> None:
     boundaries : sequence of tuple of float
         Energy bounds for the domains.
     """
-    if x_grid.ndim != 1:
-        raise ValueError("x_grid must be one-dimensional.")
+    require_ndim(x_grid, 1, message="x_grid must be one-dimensional.")
     if y_density.ndim != 2 or y_density.shape[1] != x_grid.size:
         raise ValueError(
             "y_density must have shape (n_samples, len(x_grid))."

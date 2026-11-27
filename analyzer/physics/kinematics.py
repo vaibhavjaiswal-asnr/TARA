@@ -26,6 +26,8 @@ import pandas as pd
 from scipy.constants import physical_constants
 from scipy.interpolate import RegularGridInterpolator
 
+from common.validation import require_finite_array, require_strictly_increasing
+
 
 _KB_EV = physical_constants["Boltzmann constant in eV/K"][0]
 _NEUTRON_MASS_AMU = physical_constants["neutron mass in u"][0]
@@ -119,17 +121,14 @@ def _validate_sab_table(alpha: np.ndarray, beta: np.ndarray, values: np.ndarray)
         raise ValueError(
             "sab must contain at least two alpha points and two beta points."
         )
-    if not np.all(np.isfinite(alpha)) or not np.all(np.isfinite(beta)):
-        raise ValueError("sab coordinates must be finite.")
-    if not np.all(np.isfinite(values)):
-        raise ValueError("sab values must be finite.")
+    require_finite_array(alpha, message="sab coordinates must be finite.")
+    require_finite_array(beta, message="sab coordinates must be finite.")
+    require_finite_array(values, message="sab values must be finite.")
 
     # Do not alter backend grids. RegularGridInterpolator requires strictly
     # increasing coordinates, so validate the native coordinates as received.
-    if np.any(np.diff(alpha) <= 0.0):
-        raise ValueError("sab alpha coordinates must be strictly increasing.")
-    if np.any(np.diff(beta) <= 0.0):
-        raise ValueError("sab beta coordinates must be strictly increasing.")
+    require_strictly_increasing(alpha, message="sab alpha coordinates must be strictly increasing.")
+    require_strictly_increasing(beta, message="sab beta coordinates must be strictly increasing.")
 
 
 

@@ -12,6 +12,7 @@ import pandas as pd
 from scipy.spatial.distance import pdist, squareform
 from sklearn.preprocessing import StandardScaler
 
+from common.validation import require_finite_array
 from core.data.input_pdos import PhononSpectra
 from core.data.material_ensemble import MaterialEnsemble
 from core.data.material_scattering import MaterialScatteringModel
@@ -290,10 +291,8 @@ class EnsembleAnalyzer:
             raise ValueError(
                 "Kinematic result coordinates and values must have matching lengths."
             )
-        if not np.all(np.isfinite(coordinates)):
-            raise ValueError("Kinematic result coordinates must be finite.")
-        if not np.all(np.isfinite(values)):
-            raise ValueError("Kinematic result values must be finite.")
+        require_finite_array(coordinates, message="Kinematic result coordinates must be finite.")
+        require_finite_array(values, message="Kinematic result values must be finite.")
 
         prepared = pd.Series(values, index=pd.Index(coordinates))
         if not prepared.index.is_unique:

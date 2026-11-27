@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 import math
 
+from common.validation import require_finite_nonnegative, require_finite_positive
 from core.data.input_pdos import PhononSpectra
 
 
@@ -24,8 +25,10 @@ def _finite(value: float, label: str, *, positive: bool = False) -> None:
     positive : bool, optional
         Require strictly positive values instead of nonnegative values.
     """
-    if not math.isfinite(value) or (value <= 0 if positive else value < 0):
-        raise ValueError(f"{label} must be finite and {'positive' if positive else 'nonnegative'}.")
+    if positive:
+        require_finite_positive(value, name=label)
+    else:
+        require_finite_nonnegative(value, name=label)
 
 
 @dataclass(frozen=True)

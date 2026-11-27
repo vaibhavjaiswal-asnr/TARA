@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.constants import physical_constants, k, hbar
 
+from common.validation import require_same_shape
 from analyzer.parsers.base_tsl_parser import BaseTslParser
 from analyzer.physics.data_models import PhysicsData, ThermodynamicsData, DifferentialData, IntegralData
 from analyzer.backends.njoy_engine import NjoyEngine
@@ -364,7 +365,6 @@ class NjoyParser(BaseTslParser):
             values = np.array(records[key]['S'], dtype=float)
             if coordinates.shape != alpha.shape or not np.allclose(coordinates, alpha):
                 raise ValueError("Inconsistent alpha grid across NJOY MF7/MT4 beta records.")
-            if values.shape != alpha.shape:
-                raise ValueError("NJOY MF7/MT4 S(alpha,beta) column does not match alpha grid.")
+            require_same_shape(values, alpha, message="NJOY MF7/MT4 S(alpha,beta) column does not match alpha grid.")
             columns.append(values)
         return alpha, np.column_stack(columns)

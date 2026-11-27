@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Mapping
 import math
 
+from common.validation import require_finite_positive
+
 
 @dataclass
 class AceGenerationConfig:
@@ -363,14 +365,11 @@ class AceGenerationConfig:
         ValueError
             If an option is outside its supported range.
         """
-        if not math.isfinite(temperature) or temperature <= 0:
-            raise ValueError("ACE temperature must be a finite positive number in kelvin.")
-        if not math.isfinite(emax) or emax <= 0:
-            raise ValueError("ACE thermal upper energy must be finite and positive.")
+        require_finite_positive(temperature, message="ACE temperature must be a finite positive number in kelvin.")
+        require_finite_positive(emax, message="ACE thermal upper energy must be finite and positive.")
         if not isinstance(nbin, int) or nbin < 1:
             raise ValueError("ACE angular bin count must be a positive integer.")
-        if not math.isfinite(tol) or tol <= 0:
-            raise ValueError("ACE tolerance must be finite and positive.")
+        require_finite_positive(tol, message="ACE tolerance must be finite and positive.")
 
     @staticmethod
     def _resolve_inferred_reactions(lthr, mti, mte, allow_additional_scatterers):

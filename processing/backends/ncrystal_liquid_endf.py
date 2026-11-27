@@ -24,6 +24,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 
+from common.validation import require_finite_nonnegative, require_finite_positive
 from processing.backends.liquid_capture.payload import read_sabtap_arrays
 
 
@@ -97,8 +98,7 @@ def _positive_float(name: str, value: Any) -> float:
         x = float(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{name} must be a finite positive number") from exc
-    if not (math.isfinite(x) and x > 0):
-        raise ValueError(f"{name} must be a finite positive number, got {value!r}")
+    require_finite_positive(x, message=f"{name} must be a finite positive number, got {value!r}")
     return x
 
 
@@ -730,8 +730,7 @@ def _validate_export_arguments(
         raise ValueError("MF7 and downstream NJOY Emax must match")
     if emax > k.suggested_emax_eV * (1 + 1e-8):
         raise ValueError("Requested Emax exceeds captured kernel suggested Emax")
-    if smin < 0 or not math.isfinite(smin):
-        raise ValueError("smin must be nonnegative and finite")
+    require_finite_nonnegative(smin, message="smin must be nonnegative and finite")
     return teff, eps, emax
 
 

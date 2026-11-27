@@ -12,6 +12,8 @@ from pathlib import Path
 import tomllib
 from typing import Any
 
+from common.validation import require_existing_file
+
 
 class ApplicationConfigError(ValueError):
     """Raised when an application TOML file has invalid settings."""
@@ -261,8 +263,7 @@ def _read_toml(source: Path) -> dict[str, Any]:
     ApplicationConfigError
         If the TOML syntax is invalid.
     """
-    if not source.is_file():
-        raise FileNotFoundError(f"ACE configuration not found: {source}")
+    require_existing_file(source, message=f"ACE configuration not found: {source}")
     try:
         with source.open("rb") as stream:
             raw = tomllib.load(stream)

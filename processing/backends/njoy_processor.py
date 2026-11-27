@@ -16,6 +16,7 @@ import uuid
 
 from endf_parserpy import EndfParserPy
 
+from common.validation import require_existing_file
 from core.data.input_pdos import PhononSpectra
 from core.data.material_scattering import MaterialScatteringModel
 from input_output.leapr.core import LeaprFile
@@ -272,10 +273,9 @@ class NjoyProcessor:
         for tape_name, source_path in input_tapes.items():
             cls._validate_tape_name(tape_name)
             source = Path(source_path).resolve()
-            if not source.is_file():
-                raise FileNotFoundError(
-                    f"NJOY input for {tape_name} not found at: {source}"
-                )
+            require_existing_file(
+                source, message=f"NJOY input for {tape_name} not found at: {source}",
+            )
             shutil.copy(str(source), str(run_dir / tape_name))
 
     @contextmanager

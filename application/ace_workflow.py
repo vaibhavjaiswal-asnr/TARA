@@ -14,6 +14,7 @@ import shutil
 import tempfile
 from typing import Any
 
+from common.validation import require_existing_file
 from application.configuration import AceApplicationConfig, ApplicationConfigError
 
 
@@ -63,8 +64,10 @@ def _existing_input(path: Path, label: str) -> Path:
     FileNotFoundError
         If the path is missing, empty, or is not a file.
     """
-    if not path.is_file() or path.stat().st_size == 0:
-        raise FileNotFoundError(f"Missing or empty {label}: {path}")
+    error_message = f"Missing or empty {label}: {path}"
+    require_existing_file(path, message=error_message)
+    if path.stat().st_size == 0:
+        raise FileNotFoundError(error_message)
     return path
 
 

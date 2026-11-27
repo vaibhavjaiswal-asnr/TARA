@@ -5,6 +5,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Union, Tuple, Optional
 
+from common.validation import require_existing_file
 from input_output.base import BaseFormatFile
 from input_output.leapr.core import LeaprFile
 from input_output.ncrystal.core import NCrystalFile
@@ -31,8 +32,7 @@ def detect_format(filepath: Union[str, Path], sniff_limit: int = 50) -> str:
         If the source path is missing or is not a file.
     """
     path = Path(filepath)
-    if not path.is_file():
-        raise FileNotFoundError(f"The file {path} does not exist.")
+    require_existing_file(path, message=f"The file {path} does not exist.")
 
     # Open the external file with an explicit encoding and deterministic resource cleanup.
     with open(path, 'r', encoding='utf-8') as f:

@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import ArrayLike
 
+from common.validation import require_finite_nonnegative
 from core.data.input_pdos import PhononSpectra
 from core.data.material_scattering import DiscreteOscillator
 
@@ -36,8 +37,7 @@ def _validate_sigma(oscillator_sigma_ev: float) -> float:
         If ``oscillator_sigma_ev`` is nonfinite or negative.
     """
     sigma = float(oscillator_sigma_ev)
-    if not np.isfinite(sigma) or sigma < 0.0:
-        raise ValueError("oscillator_sigma_ev must be finite and nonnegative.")
+    require_finite_nonnegative(sigma, message="oscillator_sigma_ev must be finite and nonnegative.")
     return sigma
 
 
@@ -436,8 +436,7 @@ def reconstruct_vibrational_spectrum(
     """
     modes = tuple(oscillators)
     weight = float(continuous_weight)
-    if not np.isfinite(weight) or weight < 0.0:
-        raise ValueError("Continuous weight must be finite and nonnegative.")
+    require_finite_nonnegative(weight, message="Continuous weight must be finite and nonnegative.")
     sigma = _validate_sigma(oscillator_sigma_ev)
 
     grid = _resolve_uniform_grid(

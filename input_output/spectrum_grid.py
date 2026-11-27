@@ -9,6 +9,14 @@ from __future__ import annotations
 
 import numpy as np
 
+from common.validation import (
+    require_finite_array,
+    require_ndim,
+    require_nonnegative_array,
+    require_same_shape,
+    require_strictly_increasing,
+)
+
 
 def resample_on_source_spacing(
     reference_energy: np.ndarray,
@@ -51,16 +59,24 @@ def resample_on_source_spacing(
     original = np.asarray(reference_energy, dtype=np.float64)
     source = np.asarray(sample_energy, dtype=np.float64)
     values = np.asarray(sample_density, dtype=np.float64)
-    if (original.ndim != 1 or original.size < 2 or
-            not np.isfinite(original).all() or np.any(np.diff(original) <= 0)):
-        raise ValueError("Original VDOS grid must be finite, increasing, and contain >=2 points.")
+    reference_error = "Original VDOS grid must be finite, increasing, and contain >=2 points."
+    require_ndim(original, 1, message=reference_error)
+    if original.size < 2:
+        raise ValueError(reference_error)
+    require_finite_array(original, message=reference_error)
+    require_strictly_increasing(original, message=reference_error)
     spacing = float((original[-1] - original[0]) / (original.size - 1))
     if not np.allclose(np.diff(original), spacing, rtol=1e-6, atol=1e-12):
         raise ValueError("Original output VDOS grid must have uniform spacing.")
-    if (source.ndim != 1 or values.shape != source.shape or source.size < 2 or
-            not np.isfinite(source).all() or not np.isfinite(values).all() or
-            np.any(np.diff(source) <= 0) or np.any(values < 0)):
-        raise ValueError("Sampled VDOS grid and density must be finite, valid, and increasing.")
+    sample_error = "Sampled VDOS grid and density must be finite, valid, and increasing."
+    require_ndim(source, 1, message=sample_error)
+    require_same_shape(values, source, message=sample_error)
+    if source.size < 2:
+        raise ValueError(sample_error)
+    require_finite_array(source, message=sample_error)
+    require_finite_array(values, message=sample_error)
+    require_strictly_increasing(source, message=sample_error)
+    require_nonnegative_array(values, message=sample_error)
     if original[0] < source[0] - 1e-12:
         raise ValueError("Sampled spectrum does not cover the original low-energy bound.")
 

@@ -43,6 +43,7 @@ markers = [
 [tool.setuptools.packages.find]
 # Tells the build system to include these specific top-level domains
 include = [
+    "common*",
     "input_output*",
     "core*",
     "processing*",

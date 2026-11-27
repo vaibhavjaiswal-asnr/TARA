@@ -23,6 +23,14 @@ from NCrystal import ncmat2endf
 from NCrystal._ncmat2endf_impl import NuclearData
 from scipy.constants import physical_constants
 
+from common.validation import (
+    require_finite_array,
+    require_finite_positive,
+    require_ndim,
+    require_nonnegative_array,
+    require_same_shape,
+    require_strictly_increasing,
+)
 from core.data.input_pdos import PhononSpectra
 from input_output.ncrystal.liquids import load_liquid_ncmat
 from processing.backends.ncmat_isolation import isolate_ncmat_dyninfo, normalize_active_species
@@ -126,16 +134,19 @@ def _validate_vdos_arrays(energy_grid, density):
     energy_grid, density : numpy.ndarray
         Paired one-dimensional VDOS arrays on an energy grid in eV.
     """
-    if energy_grid.ndim != 1 or density.shape != energy_grid.shape:
-        raise ValueError("NCrystal VDOS: energy and density must be paired 1D arrays")
+    shape_error = "NCrystal VDOS: energy and density must be paired 1D arrays"
+    require_ndim(energy_grid, 1, message=shape_error)
+    require_same_shape(density, energy_grid, message=shape_error)
     if energy_grid.size < 3:
         raise ValueError("NCrystal VDOS: at least three energy points are required")
-    if not np.isfinite(energy_grid).all() or not np.isfinite(density).all():
-        raise ValueError("NCrystal VDOS: nonfinite energy or density values")
-    if energy_grid[0] < 0 or np.any(np.diff(energy_grid) <= 0):
-        raise ValueError("NCrystal VDOS: energies must be nonnegative and increasing")
-    if np.any(density < 0):
-        raise ValueError("NCrystal VDOS: density must be nonnegative")
+    finite_error = "NCrystal VDOS: nonfinite energy or density values"
+    require_finite_array(energy_grid, message=finite_error)
+    require_finite_array(density, message=finite_error)
+    grid_error = "NCrystal VDOS: energies must be nonnegative and increasing"
+    if energy_grid[0] < 0:
+        raise ValueError(grid_error)
+    require_strictly_increasing(energy_grid, message=grid_error)
+    require_nonnegative_array(density, message="NCrystal VDOS: density must be nonnegative")
 
 
 def _remove_synthetic_debye_prefix(energy_grid, density, original_starts_at_zero):
@@ -901,8 +912,7 @@ class NcrystalProcessor:
         NCrystalNativeState
             Native scattering state containing the active plugin.
         """
-        if not math.isfinite(temperature) or temperature <= 0:
-            raise ValueError("Temperature must be finite and positive.")
+        require_finite_positive(temperature, message="Temperature must be finite and positive.")
         path = Path(ncmat_filepath).expanduser().resolve()
         load_liquid_ncmat(path)
         if verify_plugin:
@@ -970,8 +980,7 @@ class NcrystalProcessor:
         tuple[np.ndarray, np.ndarray]
             Outgoing energies and scattering-angle cosines.
         """
-        if not math.isfinite(incident_energy_ev) or incident_energy_ev <= 0:
-            raise ValueError("Incident energy must be positive.")
+        require_finite_positive(incident_energy_ev, message="Incident energy must be positive.")
         if type(n_events) is not int or n_events < 1:
             raise ValueError("n_events must be a positive integer.")
         sampler = getattr(state.scatter, "sampleScatterIsotropic", None)

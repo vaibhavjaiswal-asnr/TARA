@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 from typing import Dict, Any
 from parallel_execution import run_parallel
 
+from common.validation import require_existing_file
 from processing.backends.njoy_processor import NjoyProcessor
 from processing.validators.endf_validator import EndfValidator
 from processing.deck_builders.leapr_builder import (
@@ -115,8 +116,7 @@ class NjoyBatchOrchestrator:
                 raise ValueError("Material ensemble reference temperature differs from requested temperature.")
 
         template_path = Path(base_leapr_file).resolve()
-        if not template_path.is_file():
-            raise FileNotFoundError(f"LEAPR template not found: {template_path}")
+        require_existing_file(template_path, message=f"LEAPR template not found: {template_path}")
 
         template = LeaprFile.from_file(str(template_path))
         output_temperature = self._resolve_batch_temperature(template, temperature, material_state, ensemble)

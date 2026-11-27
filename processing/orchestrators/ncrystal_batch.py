@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Dict, Any
 from parallel_execution import run_parallel
 
+from common.validation import require_existing_file
 from processing.backends.ncrystal_processor import NcrystalProcessor
 from input_output.ncrystal.liquids import (load_liquid_ncmat, parse_custom_liquids, replace_vdos)
 from input_output.ncrystal.material_adapter import fold_solidlike_vdos
@@ -96,8 +97,7 @@ class NcrystalBatchOrchestrator:
         """
         if include_reference and ensemble.reference is None:
             raise ValueError("The ensemble has no reference spectrum (sample_000).")
-        if not Path(base_ncmat_file).is_file():
-            raise FileNotFoundError(f"NCrystal template not found: {base_ncmat_file}")
+        require_existing_file(base_ncmat_file, message=f"NCrystal template not found: {base_ncmat_file}")
         if not atom_label:
             raise ValueError("atom_label must identify the NCrystal target element.")
         if temperature <= 0:
